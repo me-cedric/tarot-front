@@ -5,9 +5,10 @@ import Zone from '../helpers/zone'
 export default class Game extends Phaser.Scene {
   card: Phaser.GameObjects.Image
   dealText: Phaser.GameObjects.Text
-  zone: Zone
   dropZone: Phaser.GameObjects.Zone
   outline: Phaser.GameObjects.Graphics
+  zone: Zone
+
   dealCards: () => void
 
   constructor() {
@@ -24,14 +25,12 @@ export default class Game extends Phaser.Scene {
   }
 
   create() {
-    this.dealText = this.add.text(75, 350, ['DEAL CARDS'])
+    this.dealText = this.add.text(75, 350, ['Start Game'])
       .setFontSize(18)
       .setFontFamily('Trebuchet MS')
       .setColor('#00ffff')
       .setInteractive()
 
-    this.card = this.add.image(300, 300, 'cyanCardFront').setScale(0.3, 0.3).setInteractive()
-    this.input.setDraggable(this.card)
     this.dealCards = () => {
       for (let i = 0; i < 5; i++) {
         const playerCard = new Card(this)

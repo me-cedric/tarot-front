@@ -20,8 +20,10 @@
     "@angular/platform-browser-dynamic": "~9.1.11",
     "@angular/router": "~9.1.11",
     "@ion-phaser/core": "^1.2.3",
+    "@types/socket.io-client": "^1.4.33",
     "phaser": "^3.24.1",
     "rxjs": "~6.5.4",
+    "socket.io-client": "^2.3.0",
     "tslib": "^1.10.0",
     "zone.js": "~0.10.2"
   },
