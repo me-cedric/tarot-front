@@ -3,8 +3,6 @@ import Game from '../scenes/game'
 
 import * as Phaser from 'phaser'
 
-import { SocketService } from './../services/socket.service'
-
 interface GameInstance extends Phaser.Types.Core.GameConfig {
   instance: Phaser.Game
 }
@@ -26,7 +24,7 @@ export class GameComponent implements OnInit {
     instance: null
   }
 
-  constructor(private socketService: SocketService) {}
+  constructor() {}
 
   getInstance() {
     return this.game.instance
@@ -37,7 +35,6 @@ export class GameComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.socketService.connect()
     this.initializeGame()
   }
 

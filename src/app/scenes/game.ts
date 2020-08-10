@@ -1,13 +1,21 @@
+import io from 'socket.io-client'
 import * as Phaser from 'phaser'
 import Card from '../helpers/card'
 import Zone from '../helpers/zone'
+import Dealer from '../helpers/dealer'
+
+import { environment } from './../../environments/environment'
 
 export default class Game extends Phaser.Scene {
   card: Phaser.GameObjects.Image
+  dealer: Dealer
   dealText: Phaser.GameObjects.Text
   dropZone: Phaser.GameObjects.Zone
   outline: Phaser.GameObjects.Graphics
   zone: Zone
+  isPlayerA: boolean
+  opponentCards: Phaser.GameObjects.Image[]
+  socket: SocketIOClient.Socket
 
   dealCards: () => void
 
@@ -25,20 +33,49 @@ export default class Game extends Phaser.Scene {
   }
 
   create() {
+    this.isPlayerA = false
+    this.opponentCards = []
+
+    this.zone = new Zone(this)
+    this.dropZone = this.zone.renderZone()
+    this.outline = this.zone.renderOutline(this.dropZone)
+
+    this.dealer = new Dealer(this)
+
+    this.socket = io(environment.socketServer)
+
+    this.socket.on('connect', () => {
+      console.log('Connected!')
+    })
+
+    this.socket.on('isPlayerA', () => {
+      this.isPlayerA = true
+      console.log('I\'m player A')
+    })
+
+    this.socket.on('dealCards', () => {
+      this.dealer.dealCards()
+      this.dealText.disableInteractive()
+    })
+
+    this.socket.on('cardPlayed', ({ sprite, isPlayerA }) => {
+      if (isPlayerA !== this.isPlayerA) {
+        this.opponentCards.shift().destroy()
+        this.dropZone.data.values.cards++
+        const card = new Card(this)
+        card.render(((this.dropZone.x - 350) + (this.dropZone.data.values.cards * 50)), (this.dropZone.y), sprite).disableInteractive()
+      }
+    })
+
     this.dealText = this.add.text(75, 350, ['Start Game'])
       .setFontSize(18)
       .setFontFamily('Trebuchet MS')
       .setColor('#00ffff')
       .setInteractive()
 
-    this.dealCards = () => {
-      for (let i = 0; i < 5; i++) {
-        const playerCard = new Card(this)
-        playerCard.render(475 + (i * 100), 650, 'cyanCardFront')
-      }
-    }
-
-    this.dealText.on('pointerdown', () => this.dealCards())
+    this.dealText.on('pointerdown', () => {
+      this.socket.emit('dealCards')
+    })
 
     this.dealText.on('pointerover', () => this.dealText.setColor('#ff69b4'))
 
@@ -62,16 +99,13 @@ export default class Game extends Phaser.Scene {
       }
     })
 
-    this.input.on('drop', (pointer: any, gameObject: Phaser.GameObjects.Sprite, dropZone) => {
+    this.input.on('drop', (pointer: any, gameObject: any, dropZone) => {
       dropZone.data.values.cards++
       gameObject.x = (dropZone.x - 350) + (dropZone.data.values.cards * 50)
       gameObject.y = dropZone.y
       gameObject.disableInteractive()
+      this.socket.emit('cardPlayed', { sprite: gameObject.texture.key, isPlayerA: this.isPlayerA })
     })
-
-    this.zone = new Zone(this)
-    this.dropZone = this.zone.renderZone()
-    this.outline = this.zone.renderOutline(this.dropZone)
   }
 
   update() {
