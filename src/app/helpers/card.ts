@@ -1,5 +1,5 @@
 export default class Card {
-  render: (x: number, y: number, sprite: Phaser.Textures.Texture) => Phaser.GameObjects.Image
+  render: (x: number, y: number, sprite: string) => Phaser.GameObjects.Image
 
   constructor(scene: Phaser.Scene) {
     this.render = (x, y, sprite) => {
