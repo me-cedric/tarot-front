@@ -6,6 +6,26 @@ import Dealer from '../helpers/dealer'
 
 import { environment } from './../../environments/environment'
 
+class Player {
+  id: string
+  name?: string
+  lobby?: string
+}
+
+class Room {
+  public started = false
+  public creatorId: string
+  public roomName: string
+  private cards: number[]
+  public players: { [key: string]: any } = {}
+
+  constructor(creatorId: string, roomName: string) {
+    this.creatorId = creatorId
+    this.roomName = roomName
+    this.cards = [...Array(22).keys()]
+  }
+}
+
 export default class Game extends Phaser.Scene {
   card: Phaser.GameObjects.Image
   dealer: Dealer
@@ -13,7 +33,8 @@ export default class Game extends Phaser.Scene {
   dropZone: Phaser.GameObjects.Zone
   outline: Phaser.GameObjects.Graphics
   zone: Zone
-  isPlayerA: boolean
+  player: Player
+  room: Room
   opponentCards: Phaser.GameObjects.Image[]
   socket: SocketIOClient.Socket
 
@@ -33,7 +54,6 @@ export default class Game extends Phaser.Scene {
   }
 
   create() {
-    this.isPlayerA = false
     this.opponentCards = []
 
     this.zone = new Zone(this)
@@ -46,26 +66,65 @@ export default class Game extends Phaser.Scene {
 
     this.socket.on('connect', () => {
       console.log('Connected!')
+      this.socket.emit('setUser', 'userName')
     })
 
-    this.socket.on('isPlayerA', () => {
-      this.isPlayerA = true
-      console.log('I\'m player A')
+    this.socket.on('gameJoined', (room: Room) => {
+      this.room = room
+      // todo editRoomName
+    })
+
+    this.socket.on('user', (player) => {
+      this.player = player
     })
 
     this.socket.on('dealCards', () => {
       this.dealer.dealCards()
       this.dealText.disableInteractive()
     })
+    let rooom = ''
+    this.socket.on('roomCreated', (room) => {
+      rooom = room
+      console.log(room)
+    })
 
-    this.socket.on('cardPlayed', ({ sprite, isPlayerA }) => {
-      if (isPlayerA !== this.isPlayerA) {
+    this.socket.on('cardPlayed', ({ sprite, player }) => {
+      if (player.id !== this.player.id) {
         this.opponentCards.shift().destroy()
         this.dropZone.data.values.cards++
         const card = new Card(this)
         card.render(((this.dropZone.x - 350) + (this.dropZone.data.values.cards * 50)), (this.dropZone.y), sprite).disableInteractive()
       }
     })
+
+    const join = this.add.text(75, 370, ['Join'])
+      .setFontSize(18)
+      .setFontFamily('Trebuchet MS')
+      .setColor('#00ffff')
+      .setInteractive()
+
+    join.on('pointerdown', () => {
+      this.socket.emit('joinRoom', rooom)
+    })
+
+    join.on('pointerover', () => join.setColor('#ff69b4'))
+
+    join.on('pointerout', () => join.setColor('#00ffff'))
+
+    const create = this.add.text(75, 390, ['Create'])
+      .setFontSize(18)
+      .setFontFamily('Trebuchet MS')
+      .setColor('#00ffff')
+      .setInteractive()
+
+    create.on('pointerdown', () => {
+      this.socket.emit('createRoom', 'rooom name')
+    })
+
+    create.on('pointerover', () => create.setColor('#ff69b4'))
+
+    create.on('pointerout', () => create.setColor('#00ffff'))
+
 
     this.dealText = this.add.text(75, 350, ['Start Game'])
       .setFontSize(18)
@@ -104,7 +163,7 @@ export default class Game extends Phaser.Scene {
       gameObject.x = (dropZone.x - 350) + (dropZone.data.values.cards * 50)
       gameObject.y = dropZone.y
       gameObject.disableInteractive()
-      this.socket.emit('cardPlayed', { sprite: gameObject.texture.key, isPlayerA: this.isPlayerA })
+      this.socket.emit('cardPlayed', gameObject.texture.key)
     })
   }
 

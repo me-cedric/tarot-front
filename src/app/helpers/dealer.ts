@@ -8,7 +8,7 @@ export default class Dealer {
     this.dealCards = () => {
       let playerSprite: string
       let opponentSprite: string
-      if (scene.isPlayerA) {
+      if (scene.player) {
         playerSprite = 'cyanCardFront'
         opponentSprite = 'magentaCardBack'
       } else {
