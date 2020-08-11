@@ -74,6 +74,11 @@ export default class Game extends Phaser.Scene {
       // todo editRoomName
     })
 
+    this.socket.on('gameBoot', (room: any) => {
+      console.log(room)
+      // todo editRoomName
+    })
+
     this.socket.on('user', (player) => {
       this.player = player
     })
